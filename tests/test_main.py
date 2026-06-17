@@ -29,6 +29,26 @@ def test_predict_churn_invalid_input():
         predict_churn(features)
 
 
+def test_post_predict_invalid_input():
+    with TestClient(app=app) as client:
+        # missing the 'Tenure' field completely
+        bad_payload = {
+            "CreditScore": 600,
+            "Age": 40,
+            "Balance": 0.0,
+            "NumOfProducts": 2,
+            "HasCrCard": 1,
+            "IsActiveMember": 1,
+            "EstimatedSalary": 50000.0,
+            "Geography": "France",
+            "Gender": "Male",
+        }
+        response = client.post("/predict", json=bad_payload)
+
+        # litestar validation errors return 400
+        assert response.status_code == 400
+
+
 # ---------------------------------------------------------------------------
 # Endpoint Tests
 # ---------------------------------------------------------------------------
@@ -50,6 +70,10 @@ def test_post_predict():
         }
         response = client.post("/predict", json=payload)
         assert response.status_code == 201
+
+        data = response.json()
+        assert "prediction" in data
+        assert data["prediction"] in [0, 1]
 
 
 def test_get_health():
