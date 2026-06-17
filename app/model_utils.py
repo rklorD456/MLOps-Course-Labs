@@ -11,7 +11,6 @@ import joblib
 # tell python to ignore the harmless scikit-learn warning
 warnings.filterwarnings("ignore", message="X does not have valid feature names")
 
-# TODO 1: Load your serialized churn model (and preprocessor if any) from data/
 try:
     model = joblib.load("data/model.pkl")
 
@@ -30,7 +29,6 @@ def predict_churn(features: list[float]) -> int:
     """
     Takes a list of raw feature values and returns a churn prediction (0 or 1).
     """
-    # TODO 3: Preprocess the features
 
     column_names = [
         "CreditScore",
@@ -46,10 +44,7 @@ def predict_churn(features: list[float]) -> int:
     ]
 
     raw_df = pd.DataFrame([features], columns=column_names)
-    processed_features = preprocessor.transform(raw_df)
-
-    # TODO 4: Use model.predict() on processed_features to get a prediction and return it as an int
-    #         Hint: model.predict() expects a 2D array
+    processed_features = preprocessor.transform(raw_df) if preprocessor else features
 
     prediction = model.predict(processed_features)
     return int(prediction[0])

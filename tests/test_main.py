@@ -6,29 +6,61 @@ Run with:
     pytest tests/ -v --cov=app --cov=main --cov-report=term-missing
 """
 
+import pytest
+from litestar.testing import TestClient
 
+from app.model_utils import predict_churn
+from main import app
 # ---------------------------------------------------------------------------
 # Function Tests
 # ---------------------------------------------------------------------------
 
-# TODO 1: Write a test that calls predict_churn() directly with sample features
-#         and asserts the result is 0 or 1
-#         Hint: import predict_churn from app.model_utils
 
-# TODO 2 (bonus): Write another function test with a `with pytest.raises(...):`
+def test_predict_churn():
+    features = [600, 40, 2, 0.0, 2, 1, 1, 50000.0, "France", "Male"]
+    result = predict_churn(features)
+    assert result in [0, 1]
+
+
+def test_predict_churn_invalid_input():
+    features = [600, 40, 2, 0.0, 2, 1, 1, 50000.0, "France"]  # Missing one feature
+
+    with pytest.raises(ValueError):
+        predict_churn(features)
 
 
 # ---------------------------------------------------------------------------
 # Endpoint Tests
 # ---------------------------------------------------------------------------
 
-# TODO 3: Write a test that POSTs to /predict with valid JSON
-#         and checks the status code and response body
-#         Hint: Litestar POST returns 201, not 200
-#         Hint: use `with TestClient(app=app) as client:`
 
-# TODO 4: Write a test for GET /health
+def test_post_predict():
+    with TestClient(app=app) as client:
+        payload = {
+            "CreditScore": 600,
+            "Age": 40,
+            "Tenure": 2,
+            "Balance": 0.0,
+            "NumOfProducts": 2,
+            "HasCrCard": 1,
+            "IsActiveMember": 1,
+            "EstimatedSalary": 50000.0,
+            "Geography": "France",
+            "Gender": "Male",
+        }
+        response = client.post("/predict", json=payload)
+        assert response.status_code == 201
 
-# TODO 5: Write a test for GET /
 
-# TODO 6 (bonus): Test that invalid input returns status 400
+def test_get_health():
+    with TestClient(app=app) as client:
+        response = client.get("/health")
+        assert response.status_code == 200
+        assert response.json() == {"status": "healthy"}
+
+
+def test_get_home():
+    with TestClient(app=app) as client:
+        response = client.get("/")
+        assert response.status_code == 200
+        assert response.json() == {"message": "Welcome to the Churn Prediction API!"}
